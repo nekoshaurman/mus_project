@@ -4,6 +4,7 @@ import transform_data as data
 import telebot
 import authorization
 from telebot import types
+import random
 
 bot = telebot.TeleBot(authorization.bot_token())
 
@@ -16,6 +17,11 @@ track_n = 0
 
 @bot.message_handler(commands=['start'])
 def start(message):
+    rnd = random.randint(1, 2)
+    if rnd == 1:
+        bot.send_video(message.chat.id, 'https://media.tenor.com/LYUe1FNHN-UAAAAC/cat-headphones.gif')
+    if rnd == 2:
+        bot.send_video(message.chat.id, 'https://media.tenor.com/82Rr2PPBCtIAAAAd/cat-jam-cat.gif')
     mess = f'Привет <b>{message.from_user.first_name}</b> 👋.\n\n<b>NekkoMusic</b> 🎧 - музыкальный бот, ' \
            f'который всегда с ' \
            f'тобой на <u>одной волне 🎵</u>.\n\n💿 Мы поможем подобрать тебе плейлист мечты! 💿\n\nНапиши /menu, ' \
@@ -35,10 +41,10 @@ def menu(message):
 
     markup.add(start, like_playlist, help_menu)
     bot.send_message(message.chat.id,
-                     f'Перед тобой интерактивное меню, нажми:\n'
-                     f'👋<b> Рекомендации</b> - чтобы бот подобрал для тебя плейлист,\n'
-                     f'🎼<b> Плейлист лайков</b> ❤ - чтобы бот подобрал для тебя,\n'
-                     f'❓<b> Помощь</b> - узнать все команды.\n',
+                     f'Перед тобой интерактивное меню, нажми:\n\n'
+                     f'👋<b> Рекомендации</b> - чтобы бот подобрал для тебя плейлист,\n\n'
+                     f'🎼<b> Плейлист лайков</b> ❤ - чтобы бот подобрал для тебя,\n\n'
+                     f'❓<b> Помощь</b> - узнать все команды.\n\n',
                      parse_mode='html', reply_markup=markup)
 
 
@@ -174,6 +180,10 @@ def save_liked():
             dataset_users = pd.concat([dataset_users, new_user], ignore_index=True)
 
     dataset_users.to_csv("data_users.csv", sep=";", index=False)
+
+
+def liked_playlist(message):
+    print('1')
 
 
 @bot.callback_query_handler(func=lambda callback: callback.data)
