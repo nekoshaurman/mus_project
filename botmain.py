@@ -28,22 +28,6 @@ def menu(message):
                      parse_mode='html', reply_markup=markup)
 
 
-def get_like(message):
-    global like
-
-    # bot.send_message(message.from_user.id, "Какой трек добавить? (номер из списка)")
-    try:
-        like = int(message.text)
-        if 1 <= like <= 10:
-            bot.send_message(message.from_user.id, text="Добавлено!")
-        else:
-            bot.send_message(message.from_user.id, 'Что-то не так :c')
-            bot.register_next_step_handler(message, get_like)
-    except Exception:
-        bot.send_message(message.from_user.id, 'Что-то не так :c')
-        bot.register_next_step_handler(message, get_like)
-
-
 @bot.message_handler(
     content_types=["text", "audio", "document", "photo", "sticker", "video", "video_note", "voice", "location",
                    "contact",
@@ -78,9 +62,14 @@ def like_dislike(message):
     bot.send_message(message.chat.id, 'Audio', reply_markup=kb)
 
 
+def save_liked():
+    print('1')
+
+
 @bot.callback_query_handler(func=lambda callback: callback.data)
 def check_callback_data(callback):
     if callback.data == '❤':
+        save_liked()
         bot.edit_message_text(chat_id=callback.message.chat.id,
                               message_id=callback.message.message_id, text="Этот трек будет чаще в ваших наушниках! ❤")
         like_dislike(callback.message)
