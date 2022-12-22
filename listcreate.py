@@ -89,7 +89,6 @@ def get_users(file):
     for index in range(0, count):
         user_favorite = data_users.iloc[index]  # get Series
         user_favorite = user_favorite.likelist  # get String
-
         if len(user_favorite) > 0:
             user_favorite = user_favorite[1:-1]
             user_favorite = user_favorite.replace("'", "")
@@ -104,4 +103,4 @@ def get_users(file):
 #print(type(track))
 #data_users = get_users("data_users.csv")
 #data_users.info()
-#print(data_users)
+#(data_users)
