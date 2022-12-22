@@ -5,13 +5,15 @@ import telebot
 import authorization
 from telebot import types
 
-bot = telebot.TeleBot(authorization.bot_token())
 
-dataset_music = data.get_dataset("data_copy3.csv")
-dataset_users = data.get_users("data_users.csv")
-user_id = 0
-list_to_user = pd.DataFrame()
-track_n = 0
+track_n = {}
+list_to_user = {}
+
+# dataset_music = data.get_dataset("data_copy3.csv")
+# dataset_users = data.get_users("data_users.csv")
+
+
+bot = telebot.TeleBot(authorization.bot_token())
 
 
 @bot.message_handler(commands=['start'])
@@ -21,19 +23,18 @@ def start(message):
            f'тобой на <u>одной волне 🎵</u>.\n\n💿 Мы поможем подобрать тебе плейлист мечты! 💿\n\nНапиши /menu, ' \
            f'чтобы насладится ' \
            f'прекрасными музыкальными композциями.\n '
-    global user_id
-    user_id = message.from_user.id
-    bot.send_message(message.chat.id, mess, parse_mode='html')
+    track_n[message.from_user.id] = 0
+    bot.send_message(message.from_user.id, mess, parse_mode='html')
 
 
 @bot.message_handler(commands=['menu'])
 def menu(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
-    start = types.KeyboardButton('👋 Рекомендации')
+    recommendations = types.KeyboardButton('👋 Рекомендации')
     like_playlist = types.KeyboardButton('🎼 Плейлист лайков ❤')
-    help_menu = types.KeyboardButton('❓ Помощь')
+    help_call = types.KeyboardButton('❓ Помощь')
 
-    markup.add(start, like_playlist, help_menu)
+    markup.add(recommendations, like_playlist, help_call)
     bot.send_message(message.chat.id,
                      f'Перед тобой интерактивное меню, нажми:\n'
                      f'👋<b> Рекомендации</b> - чтобы бот подобрал для тебя плейлист,\n'
@@ -49,17 +50,17 @@ def menu(message):
                    "group_chat_created", "supergroup_chat_created", "channel_chat_created", "migrate_to_chat_id",
                    "migrate_from_chat_id", "pinned_message"])
 def get_mode(message):
+    dataset_music = data.get_dataset("data_copy3.csv")
+    dataset_users = data.get_users("data_users.csv")
+
     if message.text == "👋 Рекомендации":
-        global user_id
-        global list_to_user
-        if user_id in dataset_users["id"].unique():
-            user_favorite = []
-            favorite = dataset_users.loc[dataset_users.id == user_id]
-            user_favorite.append(favorite.iloc[0]["likelist"])
+        if message.from_user.id in (dataset_users["id"].to_numpy()):
+            favorite = dataset_users.loc[dataset_users.id == message.from_user.id]
+            user_favorite = favorite.iloc[0]["likelist"]
         else:
             user_favorite = []
 
-        list_to_user = data.get_list(dataset_music, user_favorite)
+        list_to_user[message.from_user.id] = data.get_list(dataset_music, user_favorite)
 
         like_dislike(message)
 
@@ -74,20 +75,37 @@ def get_mode(message):
         menu(message)
 
 
-def help_menu(message):
-    bot.send_message(message.chat.id,
-                     f'❤ - Лайкнуть трек, чтобы чаще его слышать\n'
-                     f'💔 - Уменьшить шанс появления данной композиции\n'
-                     f'🚪 - Вернуться в меню\n'
-                     f'🎼 - Просмотреть список лайкнутых треков\n',
-                     parse_mode='html')
+def like_dislike(message):
+    kb = types.InlineKeyboardMarkup(row_width=3)
+    btn0 = types.InlineKeyboardButton(text='❤', callback_data='❤')
+    btn1 = types.InlineKeyboardButton(text='💔', callback_data='💔')
+    btn2 = types.InlineKeyboardButton(text='🚪', callback_data='🚪')
+    kb.add(btn0, btn1, btn2)
+
+    track_to_user = list_to_user[message.from_user.id].iloc[track_n[message.from_user.id]]
+    artist_name = track_to_user.artist_name
+    track_name = track_to_user.track_name
+    track_text = track_name + " --- " + artist_name + "\n"
+    track_n[message.from_user.id] += 1
+
+    if track_n[message.from_user.id] == 20:
+        track_n[message.from_user.id] = 0
+        bot.send_message(message.from_user.id,
+                         text="Вы просмотрели все предложенные треки!",
+                         parse_mode='html')
+        get_mode(message)
+
+    bot.send_message(message.from_user.id,
+                     text=track_text,
+                     reply_markup=kb)
 
 
 def liked_playlist(message):
-    global user_id
+    dataset_music = data.get_dataset("data_copy3.csv")
+    dataset_users = data.get_users("data_users.csv")
     tracks = ""
-    if user_id in dataset_users["id"].unique():
-        user_favorite = dataset_users.loc[dataset_users.id == user_id]
+    if message.from_user.id in dataset_users["id"].unique():
+        user_favorite = dataset_users.loc[dataset_users.id == message.from_user.id]
         user_favorite = user_favorite.iloc[0]["likelist"]
         count_likes = len(user_favorite)
     else:
@@ -116,70 +134,20 @@ def liked_playlist(message):
                          parse_mode='html')
 
 
-def like_dislike(message):
-    global track_n
-    global list_to_user
-    kb = types.InlineKeyboardMarkup(row_width=3)
-    btn0 = types.InlineKeyboardButton(text='❤', callback_data='❤')
-    btn1 = types.InlineKeyboardButton(text='💔', callback_data='💔')
-    btn2 = types.InlineKeyboardButton(text='🚪', callback_data='🚪')
-    kb.add(btn0, btn1, btn2)
-
-    track_to_user = list_to_user.iloc[track_n]
-    artist_name = track_to_user.artist_name
-    track_name = track_to_user.track_name
-    track_text = track_name + " --- " + artist_name + "\n"
-    track_n += 1
-
-    if track_n == 20:
-        track_n = 0
-        bot.send_message(message.chat.id,
-                         text="Вы просмотрели все предложенные треки!",
-                         parse_mode='html')
-        get_mode(message)
-
-    bot.send_message(message.chat.id,
-                     text=track_text,
-                     reply_markup=kb)
-
-
-def save_liked():
-    global dataset_users
-    global track_n
-    global user_id
-
-    liked_track = list_to_user.iloc[track_n-1]
-    id_track = liked_track.id
-    count = len(dataset_users.index)
-    if count == 0:
-        print("add first")
-        new = np.array([id_track])
-        new_user = pd.DataFrame({"id": [user_id],
-                                 "likelist": [new]})
-        dataset_users = pd.concat([dataset_users, new_user], ignore_index=True)
-    else:
-        if user_id in (dataset_users["id"].to_numpy()):
-            print("add prev")
-            index = dataset_users[dataset_users["id"] == user_id].index[0]
-            new_list = dataset_users.loc[dataset_users.id == user_id]
-            new_list = new_list.iloc[0]["likelist"]
-            if id_track not in new_list:
-                new_list = np.append(new_list, id_track)
-            dataset_users.at[index, "likelist"] = new_list
-        else:
-            print("add new")
-            new = np.array([id_track])
-            new_user = pd.DataFrame({"id": [user_id],
-                                     "likelist": [new]})
-            dataset_users = pd.concat([dataset_users, new_user], ignore_index=True)
-
-    dataset_users.to_csv("data_users.csv", sep=";", index=False)
+def help_menu(message):
+    bot.send_message(message.from_user.id,
+                     f'❤ - Лайкнуть трек, чтобы чаще его слышать\n'
+                     f'💔 - Уменьшить шанс появления данной композиции\n'
+                     f'🚪 - Вернуться в меню\n'
+                     f'🎼 - Просмотреть список лайкнутых треков\n',
+                     parse_mode='html')
 
 
 @bot.callback_query_handler(func=lambda callback: callback.data)
 def check_callback_data(callback):
     if callback.data == '❤':
-        save_liked()
+        print(list_to_user[callback.message.from_user.id])
+        save_liked(callback.message)
         bot.edit_message_text(chat_id=callback.message.chat.id,
                               message_id=callback.message.message_id, text="Этот трек будет чаще в ваших наушниках! ❤")
         like_dislike(callback.message)
@@ -193,6 +161,39 @@ def check_callback_data(callback):
                               message_id=callback.message.message_id,
                               text="Мы снова в меню 🖥️")
         menu(callback.message)
+
+
+def save_liked(message):
+    dataset_users = data.get_users("data_users.csv")
+
+    liked_track = list_to_user[message.from_user.id].iloc[track_n[message.from_user.id] - 1]
+    id_track = liked_track.id
+    count = len(dataset_users.index)  # count of users likes
+
+    if count == 0:
+        print("add first")
+        new = np.array([id_track])
+        new_user = pd.DataFrame({"id": [message.from_user.id],
+                                 "likelist": [new]})
+        dataset_users = pd.concat([dataset_users, new_user], ignore_index=True)
+
+    elif message.from_user.id in (dataset_users["id"].to_numpy()):
+        print("add prev")
+        index = dataset_users[dataset_users["id"] == message.from_user.id].index[0]
+        new_list = dataset_users.loc[dataset_users.id == message.from_user.id]
+        new_list = new_list.iloc[0]["likelist"]
+        if id_track not in new_list:
+            new_list = np.append(new_list, id_track)
+        dataset_users.at[index, "likelist"] = new_list
+
+    else:
+        print("add new")
+        new = np.array([id_track])
+        new_user = pd.DataFrame({"id": [message.from_user.id],
+                                 "likelist": [new]})
+        dataset_users = pd.concat([dataset_users, new_user], ignore_index=True)
+
+    dataset_users.to_csv("data_users.csv", sep=";", index=False)
 
 
 bot.polling(none_stop=True, interval=0)
