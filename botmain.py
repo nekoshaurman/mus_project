@@ -18,13 +18,16 @@ def start(message):
 @bot.message_handler(commands=['menu'])
 def menu(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
-    start = types.KeyboardButton('👋 Начать')
+    start = types.KeyboardButton('👋 Рекомендации')
+    like_playlist = types.KeyboardButton('🎼 Плейлист лайков ❤')
     help = types.KeyboardButton('❓ Помощь')
 
-    markup.add(start, help)
+    markup.add(start, like_playlist, help)
     bot.send_message(message.chat.id,
-                     f'Перед тобой интерактивное меню, нажми:\n👋<b> Начать</b> - чтобы бот подобрал для тебя '
-                     f'плейлист,\n❓<b> Помощь</b> - узнать все команды.\n',
+                     f'Перед тобой интерактивное меню, нажми:\n'
+                     f'👋<b> Рекомендации</b> - чтобы бот подобрал для тебя плейлист,\n'
+                     f'🎼<b> Плейлист лайков</b> ❤ - чтобы бот подобрал для тебя,\n'
+                     f'❓<b> Помощь</b> - узнать все команды.\n',
                      parse_mode='html', reply_markup=markup)
 
 
@@ -34,9 +37,15 @@ def menu(message):
                    "new_chat_members", "left_chat_member", "new_chat_title", "new_chat_photo", "delete_chat_photo",
                    "group_chat_created", "supergroup_chat_created", "channel_chat_created", "migrate_to_chat_id",
                    "migrate_from_chat_id", "pinned_message"])
+
+def liked_playlist(message):
+    print('1')
+
 def get_mode(message):
-    if message.text == "👋 Начать":
+    if message.text == "👋 Рекомендации":
         like_dislike(message)
+    elif message.text == "🎼 Плейлист лайков ❤":
+        liked_playlist(message)
     elif message.text == "❓ Помощь":
         help(message)
     else:
@@ -48,7 +57,8 @@ def help(message):
     bot.send_message(message.chat.id,
                      f'❤ - Лайкнуть трек, чтобы чаще его слышать\n'
                      f'💔 - Уменьшить шанс появления данной композиции\n'
-                     f'🚪 - Перестать собирать плейлист; вернуться в меню\n',
+                     f'🚪 - Вернуться в меню\n'
+                     f'🎼 - Просмотреть список лайкнутых треков\n',
                      parse_mode='html')
 
 
@@ -81,7 +91,7 @@ def check_callback_data(callback):
     elif callback.data == '🚪':
         bot.edit_message_text(chat_id=callback.message.chat.id,
                               message_id=callback.message.message_id,
-                              text="До встречи 👋")
+                              text="Мы снова в меню 🖥️")
         menu(callback.message)
 
 
