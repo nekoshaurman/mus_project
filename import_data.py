@@ -1,5 +1,3 @@
-import sys
-
 import authorization
 import pandas as pd
 from tqdm import tqdm
