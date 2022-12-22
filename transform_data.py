@@ -112,6 +112,6 @@ def get_users(file):
 # file_name = 'data_copy3.csv'
 # dataset = getDataset(file_name)
 # dataset.info()
-# data_users = getUsers("data_users.csv")
-# data_users.info()
-# print(data_users)
+#data_users = getUsers("data_users.csv")
+#data_users.info()
+#print(data_users)

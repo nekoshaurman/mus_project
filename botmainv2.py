@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import transform_data as data
+import listcreate as data
 import telebot
 import authorization
 from telebot import types
@@ -18,13 +18,13 @@ bot = telebot.TeleBot(authorization.bot_token())
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    mess = f'Привет <b>{message.from_user.first_name}</b> 👋.\n\n<b>NekkoMusic</b> 🎧 - музыкальный бот, ' \
+    mess = f'Привет <b>{message.chat.first_name}</b> 👋.\n\n<b>NekkoMusic</b> 🎧 - музыкальный бот, ' \
            f'который всегда с ' \
            f'тобой на <u>одной волне 🎵</u>.\n\n💿 Мы поможем подобрать тебе плейлист мечты! 💿\n\nНапиши /menu, ' \
            f'чтобы насладится ' \
            f'прекрасными музыкальными композциями.\n '
-    track_n[message.from_user.id] = 0
-    bot.send_message(message.from_user.id, mess, parse_mode='html')
+    #track_n[message.chat.id] = 0
+    bot.send_message(message.chat.id, mess, parse_mode='html')
 
 
 @bot.message_handler(commands=['menu'])
@@ -54,13 +54,14 @@ def get_mode(message):
     dataset_users = data.get_users("data_users.csv")
 
     if message.text == "👋 Рекомендации":
-        if message.from_user.id in (dataset_users["id"].to_numpy()):
-            favorite = dataset_users.loc[dataset_users.id == message.from_user.id]
+        if message.chat.id in (dataset_users["id"].to_numpy()):
+            favorite = dataset_users.loc[dataset_users.id == message.chat.id]
             user_favorite = favorite.iloc[0]["likelist"]
         else:
             user_favorite = []
 
-        list_to_user[message.from_user.id] = data.get_list(dataset_music, user_favorite)
+        track_n[message.chat.id] = 0
+        list_to_user[message.chat.id] = data.get_list(dataset_music, user_favorite)
 
         like_dislike(message)
 
@@ -71,7 +72,7 @@ def get_mode(message):
         help_menu(message)
 
     else:
-        bot.send_message(message.from_user.id, text="Я тебя не понимаю 🤔")
+        bot.send_message(message.chat.id, text="Я тебя не понимаю 🤔")
         menu(message)
 
 
@@ -82,20 +83,20 @@ def like_dislike(message):
     btn2 = types.InlineKeyboardButton(text='🚪', callback_data='🚪')
     kb.add(btn0, btn1, btn2)
 
-    track_to_user = list_to_user[message.from_user.id].iloc[track_n[message.from_user.id]]
+    track_to_user = list_to_user[message.chat.id].iloc[track_n[message.chat.id]]
     artist_name = track_to_user.artist_name
     track_name = track_to_user.track_name
     track_text = track_name + " --- " + artist_name + "\n"
-    track_n[message.from_user.id] += 1
+    track_n[message.chat.id] += 1
 
-    if track_n[message.from_user.id] == 20:
-        track_n[message.from_user.id] = 0
-        bot.send_message(message.from_user.id,
+    if track_n[message.chat.id] == 20:
+        track_n[message.chat.id] = 0
+        bot.send_message(message.chat.id,
                          text="Вы просмотрели все предложенные треки!",
                          parse_mode='html')
         get_mode(message)
 
-    bot.send_message(message.from_user.id,
+    bot.send_message(message.chat.id,
                      text=track_text,
                      reply_markup=kb)
 
@@ -104,8 +105,8 @@ def liked_playlist(message):
     dataset_music = data.get_dataset("data_copy3.csv")
     dataset_users = data.get_users("data_users.csv")
     tracks = ""
-    if message.from_user.id in dataset_users["id"].unique():
-        user_favorite = dataset_users.loc[dataset_users.id == message.from_user.id]
+    if message.chat.id in dataset_users["id"].unique():
+        user_favorite = dataset_users.loc[dataset_users.id == message.chat.id]
         user_favorite = user_favorite.iloc[0]["likelist"]
         count_likes = len(user_favorite)
     else:
@@ -135,7 +136,7 @@ def liked_playlist(message):
 
 
 def help_menu(message):
-    bot.send_message(message.from_user.id,
+    bot.send_message(message.chat.id,
                      f'❤ - Лайкнуть трек, чтобы чаще его слышать\n'
                      f'💔 - Уменьшить шанс появления данной композиции\n'
                      f'🚪 - Вернуться в меню\n'
@@ -146,7 +147,6 @@ def help_menu(message):
 @bot.callback_query_handler(func=lambda callback: callback.data)
 def check_callback_data(callback):
     if callback.data == '❤':
-        print(list_to_user[callback.message.from_user.id])
         save_liked(callback.message)
         bot.edit_message_text(chat_id=callback.message.chat.id,
                               message_id=callback.message.message_id, text="Этот трек будет чаще в ваших наушниках! ❤")
@@ -166,21 +166,21 @@ def check_callback_data(callback):
 def save_liked(message):
     dataset_users = data.get_users("data_users.csv")
 
-    liked_track = list_to_user[message.from_user.id].iloc[track_n[message.from_user.id] - 1]
+    liked_track = list_to_user[message.chat.id].iloc[track_n[message.chat.id] - 1]
     id_track = liked_track.id
     count = len(dataset_users.index)  # count of users likes
 
     if count == 0:
         print("add first")
         new = np.array([id_track])
-        new_user = pd.DataFrame({"id": [message.from_user.id],
+        new_user = pd.DataFrame({"id": [message.chat.id],
                                  "likelist": [new]})
         dataset_users = pd.concat([dataset_users, new_user], ignore_index=True)
 
-    elif message.from_user.id in (dataset_users["id"].to_numpy()):
+    elif message.chat.id in (dataset_users["id"].to_numpy()):
         print("add prev")
-        index = dataset_users[dataset_users["id"] == message.from_user.id].index[0]
-        new_list = dataset_users.loc[dataset_users.id == message.from_user.id]
+        index = dataset_users[dataset_users["id"] == message.chat.id].index[0]
+        new_list = dataset_users.loc[dataset_users.id == message.chat.id]
         new_list = new_list.iloc[0]["likelist"]
         if id_track not in new_list:
             new_list = np.append(new_list, id_track)
@@ -189,7 +189,7 @@ def save_liked(message):
     else:
         print("add new")
         new = np.array([id_track])
-        new_user = pd.DataFrame({"id": [message.from_user.id],
+        new_user = pd.DataFrame({"id": [message.chat.id],
                                  "likelist": [new]})
         dataset_users = pd.concat([dataset_users, new_user], ignore_index=True)
 

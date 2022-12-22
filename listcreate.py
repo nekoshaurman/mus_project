@@ -102,3 +102,6 @@ def get_users(file):
 #dataset_users = get_users("data_users.csv")
 #track = dataset_music.loc[dataset_music["id"] == "7w87IxuO7BDcJ3YUqCyMTT"]
 #print(type(track))
+#data_users = get_users("data_users.csv")
+#data_users.info()
+#print(data_users)
