@@ -79,6 +79,8 @@ def getList(ref_dataset, user_favorite):
     list_to_user = list_to_user.drop("mood_vec", axis=1)
     return list_to_user
 
+# def setPreferences(valence, energy):
+
 
 list_tracks = getList(dataset_src, like_list)  # favorite_list)
 print(list_tracks)
