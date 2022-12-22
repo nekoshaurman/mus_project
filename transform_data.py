@@ -27,6 +27,6 @@ def getDataset(file):
 
 # def make_new_list()
 
-file_name = 'data_copy3.csv'
-dataset = getDataset(file_name)
+# file_name = 'data_copy3.csv'
+# dataset = getDataset(file_name)
 # dataset.info()
