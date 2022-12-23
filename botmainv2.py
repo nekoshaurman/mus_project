@@ -108,7 +108,7 @@ def like_dislike(message):
               "Мне нравится, хоть я и бот 🤩"]
 
     bot.send_message(message.chat.id,
-                     text="- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
+                     text="- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
                           "- - - - - - - - \n" + track_text)
     try:
         bot.send_message(message.chat.id,
@@ -120,7 +120,7 @@ def like_dislike(message):
                      text=messes[random.randint(0, 3)] + "\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
                                                          "- "
                                                          "- - - - - - - - - - - - - - - "
-                                                         "- - - - - - - - ",
+                                                         "- - - - - ",
                      reply_markup=kb)
 
 
