@@ -3,8 +3,9 @@ import numpy as np
 import listcreate as data
 import telebot
 import authorization
+import youtube_search
 from telebot import types
-
+import random
 
 track_n = {}
 list_to_user = {}
@@ -18,12 +19,17 @@ bot = telebot.TeleBot(authorization.bot_token())
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    mess = f'Привет <b>{message.chat.first_name}</b> 👋.\n\n<b>NekkoMusic</b> 🎧 - музыкальный бот, ' \
+    rnd = random.randint(1, 2)
+    if rnd == 1:
+        bot.send_video(message.chat.id, 'https://media.tenor.com/LYUe1FNHN-UAAAAC/cat-headphones.gif')
+    if rnd == 2:
+        bot.send_video(message.chat.id, 'https://media.tenor.com/82Rr2PPBCtIAAAAd/cat-jam-cat.gif')
+    mess = f'Привет <b>{message.chat.first_name}</b> 👋.\n\n<b>NekkoBot</b> 🎧 - музыкальный бот, ' \
            f'который всегда с ' \
            f'тобой на <u>одной волне 🎵</u>.\n\n💿 Мы поможем подобрать тебе плейлист мечты! 💿\n\nНапиши /menu, ' \
            f'чтобы насладится ' \
            f'прекрасными музыкальными композциями.\n '
-    #track_n[message.chat.id] = 0
+    # track_n[message.chat.id] = 0
     bot.send_message(message.chat.id, mess, parse_mode='html')
 
 
@@ -36,10 +42,10 @@ def menu(message):
 
     markup.add(recommendations, like_playlist, help_call)
     bot.send_message(message.chat.id,
-                     f'Перед тобой интерактивное меню, нажми:\n'
-                     f'👋<b> Рекомендации</b> - чтобы бот подобрал для тебя плейлист,\n'
-                     f'🎼<b> Плейлист лайков</b> ❤ - чтобы бот подобрал для тебя,\n'
-                     f'❓<b> Помощь</b> - узнать все команды.\n',
+                     f'Перед тобой интерактивное меню, нажми:\n\n'
+                     f'👋<b> Рекомендации</b> - чтобы бот подобрал для тебя плейлист,\n\n'
+                     f'🎼<b> Плейлист лайков</b> ❤ - чтобы бот подобрал для тебя,\n\n'
+                     f'❓<b> Помощь</b> - узнать все команды.\n\n',
                      parse_mode='html', reply_markup=markup)
 
 
@@ -86,18 +92,35 @@ def like_dislike(message):
     track_to_user = list_to_user[message.chat.id].iloc[track_n[message.chat.id]]
     artist_name = track_to_user.artist_name
     track_name = track_to_user.track_name
-    track_text = track_name + " --- " + artist_name + "\n"
+    track_text = "🎵 " + track_name + " --- " + artist_name + "\n"
     track_n[message.chat.id] += 1
 
     if track_n[message.chat.id] == 20:
         track_n[message.chat.id] = 0
         bot.send_message(message.chat.id,
-                         text="Вы просмотрели все предложенные треки!",
+                         text="Вы просмотрели 20 предложенных треков!\nОставайся с нами, нажимай 👋 Рекомендации",
                          parse_mode='html')
         get_mode(message)
 
+    messes = ["Как тебе этот? 😁",
+              "Что думаешь об этой песне? 🙂",
+              "Как оно? 🙃",
+              "Мне нравится, хоть я и бот 🤩"]
+
     bot.send_message(message.chat.id,
-                     text=track_text,
+                     text="- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
+                          "- - - - - - - - \n" + track_text)
+    try:
+        bot.send_message(message.chat.id,
+                         text=youtube_search.search(youtube_search.search(track_name + " " + artist_name)))
+    except:
+        pass
+
+    bot.send_message(message.chat.id,
+                     text=messes[random.randint(0, 3)] + "\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
+                                                         "- "
+                                                         "- - - - - - - - - - - - - - - "
+                                                         "- - - - - - - - ",
                      reply_markup=kb)
 
 
@@ -146,15 +169,22 @@ def help_menu(message):
 
 @bot.callback_query_handler(func=lambda callback: callback.data)
 def check_callback_data(callback):
+    messes_like = ["Этот трек будет чаще в ваших наушниках! ❤",
+                   "У тебя хороший вкус. Мяу 😻",
+                   "Круто, сохраню в твой альбом 🤟",
+                   "Мне нравится, хоть я и бот 🤩"]
+    messes_dislike = ["Нам тоже не очень нравится эта композиция! 🤢",
+                      "Я бы такое не слушал 😑",
+                      "Так себе песня 🥴",
+                      "Выключай 😶"]
     if callback.data == '❤':
         save_liked(callback.message)
         bot.edit_message_text(chat_id=callback.message.chat.id,
-                              message_id=callback.message.message_id, text="Этот трек будет чаще в ваших наушниках! ❤")
+                              message_id=callback.message.message_id, text=messes_like[random.randint(0, 3)])
         like_dislike(callback.message)
     elif callback.data == '💔':
         bot.edit_message_text(chat_id=callback.message.chat.id,
-                              message_id=callback.message.message_id, text="Нам тоже не очень нравится эта "
-                                                                           "композиция! 🤢")
+                              message_id=callback.message.message_id, text=messes_dislike[random.randint(0, 3)])
         like_dislike(callback.message)
     elif callback.data == '🚪':
         bot.edit_message_text(chat_id=callback.message.chat.id,

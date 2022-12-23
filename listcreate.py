@@ -11,9 +11,9 @@ def get_list(ref_dataset, user_favorite):
     count_tracks = len(ref_dataset["id"].to_numpy())  # how many tracks at all
     list_to_user = pd.DataFrame()
     likes = len(user_favorite)
-    if likes > 5:
-        likes = 5
-    from_likes = likes * 2
+    if likes > 2:
+        likes = 2
+    from_likes = likes * 4
     if likes != 0:
         while len(added) < likes:
             i = randint(0, len(user_favorite)-1)
@@ -58,7 +58,7 @@ def get_recommend(track_id, ref_dataset, list_to_user):
     ref_dataset_sorted = ref_dataset.sort_values(by="distances", ascending=True)
 
     while i != 2:
-        k = randint(1, 5)
+        k = randint(1, 10)
 
         track = ref_dataset_sorted.iloc[k]  # add 2 of 5 nearest
 
